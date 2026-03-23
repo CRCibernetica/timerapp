@@ -1,8 +1,9 @@
-const CACHE_NAME = 'boxing-timer-v2';
+const CACHE_NAME = 'boxing-timer-v3';
 const ASSETS = [
   '/',
   '/index.html',
   '/favicon.png',
+  '/favicon512.png',
   '/bell.mp3',
   '/warning.mp3',
   '/manifest.json'
