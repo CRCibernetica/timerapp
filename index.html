@@ -41,8 +41,21 @@
   .preset:hover{border-color:#2ecc71;color:#2ecc71}
   .preset.active{background:#2ecc71;color:#111;border-color:#2ecc71}
   .top-presets{display:flex;gap:10px;margin-bottom:1.2rem}
+  .right-panel{display:flex;flex-direction:column;align-items:center}
   #mute-btn{background:none;border:none;cursor:pointer;position:fixed;top:1rem;right:1rem;padding:.4rem;color:#666;line-height:0}
   #mute-btn:hover{color:#aaa}
+  @media(orientation:landscape) and (max-height:500px){
+    body{flex-direction:row;flex-wrap:wrap;justify-content:center;align-items:center;gap:0 2rem;padding:.5rem 1rem}
+    h1{width:100%;text-align:center;margin-bottom:.5rem}
+    .top-presets{width:100%;justify-content:center;margin-bottom:.5rem}
+    .ring{width:clamp(160px,70vh,280px);height:clamp(160px,70vh,280px);margin:0}
+    #time{font-size:clamp(2.5rem,6vh,4rem)}
+    #phase{font-size:clamp(.7rem,1.5vh,1rem)}
+    .right-panel{display:flex;flex-direction:column;align-items:center;gap:.5rem}
+    #round-info{margin-bottom:.5rem;font-size:clamp(.85rem,2vh,1.1rem)}
+    .controls{margin-bottom:.5rem}
+    .settings{max-width:280px;margin-bottom:.5rem}
+  }
   @media(min-width:768px){
     .ring{width:clamp(400px,50vmin,600px);height:clamp(400px,50vmin,600px)}
     #time{font-size:clamp(5rem,10vmin,8rem)}
@@ -78,6 +91,7 @@
   </div>
 </div>
 
+<div class="right-panel">
 <div id="round-info">Round 1 of 8</div>
 
 <div class="controls">
@@ -123,6 +137,7 @@
     <button class="preset" id="pre-calisthenics2" onclick="applyPreset(25,40,20,5,5,'pre-calisthenics')">Calisthenics</button>
   </div>
 </details>
+</div>
 
 <button id="mute-btn" onclick="toggleMute()" title="Toggle sound">
   <svg id="icon-on" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
