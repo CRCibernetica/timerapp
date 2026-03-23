@@ -142,68 +142,23 @@ let cfg = {rounds:8, rdur:3, rest:60, prep:10, warn:10};
 let state = {phase:'prep', round:1, remaining:0, total:0, running:false, warned:false};
 let interval = null;
 let muted = false;
-let audioCtx = null;
-
-function getAudio(){
-  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  return audioCtx;
-}
-
-function tone(freq, startTime, dur, vol, type, detune){
-  type = type||'sine'; detune = detune||0;
-  if(muted) return;
-  try{
-    const ctx = getAudio();
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.type = type;
-    o.frequency.setValueAtTime(freq, startTime);
-    o.detune.value = detune;
-    g.gain.setValueAtTime(0, startTime);
-    g.gain.linearRampToValueAtTime(vol, startTime + 0.005);
-    g.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
-    o.start(startTime); o.stop(startTime + dur + 0.05);
-  }catch(e){}
-}
+const bellAudio = new Audio('bell.mp3');
+const warningAudio = new Audio('warning.mp3');
 
 function bell(){
   if(muted) return;
-  try{
-    const ctx = getAudio();
-    const t = ctx.currentTime;
-    tone(1046, t,      2.4, 0.55, 'sine',   0);
-    tone(1046, t,      2.4, 0.30, 'sine',   7);
-    tone(1046, t,      2.4, 0.30, 'sine',  -7);
-    tone(2093, t+0.01, 1.8, 0.25, 'sine',   0);
-    tone(3135, t+0.01, 1.2, 0.15, 'sine',   0);
-    tone(523,  t,      2.8, 0.20, 'sine',   0);
-    tone(1320, t,      0.08,0.40, 'square', 0);
-  }catch(e){}
+  bellAudio.currentTime = 0;
+  bellAudio.play().catch(function(){});
 }
 
 function warningBeep(){
   if(muted) return;
-  try{
-    const ctx = getAudio();
-    const t = ctx.currentTime;
-    for(var i=0;i<3;i++){
-      tone(880, t + i*0.18, 0.10, 0.35, 'square', 0);
-      tone(440, t + i*0.18, 0.10, 0.15, 'sine',   0);
-    }
-  }catch(e){}
+  warningAudio.currentTime = 0;
+  warningAudio.play().catch(function(){});
 }
 
 function endBeep(){
-  if(muted) return;
-  try{
-    const ctx = getAudio();
-    const t = ctx.currentTime;
-    tone(180, t,      0.25, 0.50, 'sine', 0);
-    tone(90,  t,      0.30, 0.30, 'sine', 0);
-    tone(180, t+0.35, 0.25, 0.50, 'sine', 0);
-    tone(90,  t+0.35, 0.30, 0.30, 'sine', 0);
-  }catch(e){}
+  bell();
 }
 
 function fmtTime(s){
