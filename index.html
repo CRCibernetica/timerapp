@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1a1a1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Boxing Timer</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:#111;color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem;user-select:none}
+  h1{font-size:1rem;letter-spacing:.2em;text-transform:uppercase;color:#888;margin-bottom:1.5rem}
+  .ring{position:relative;width:clamp(240px,40vmin,420px);height:clamp(240px,40vmin,420px);margin:0 auto 1.5rem}
+  svg.progress{position:absolute;top:0;left:0;width:100%;height:100%;transform:rotate(-90deg)}
+  .ring-track{fill:none;stroke:#333;stroke-width:12}
+  .ring-fill{fill:none;stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset .9s linear,stroke .4s}
+  .ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  #time{font-size:clamp(3rem,8vmin,6rem);font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  #phase{font-size:clamp(.75rem,1.5vmin,1.1rem);letter-spacing:.15em;text-transform:uppercase;color:#888}
+  #round-info{font-size:clamp(.9rem,1.8vmin,1.3rem);color:#aaa;margin-bottom:1.5rem}
+  h1{font-size:clamp(1rem,1.5vmin,1.2rem);letter-spacing:.2em;text-transform:uppercase;color:#888;margin-bottom:1.5rem}
+  .controls{display:flex;gap:12px;margin-bottom:1.5rem}
+  button{padding:.6rem 1.4rem;border-radius:999px;border:none;font-size:.9rem;font-weight:600;cursor:pointer;transition:transform .1s,opacity .1s}
+  button:active{transform:scale(.95)}
+  #btn-start{background:#2ecc71;color:#fff;min-width:100px}
+  #btn-start.running{background:#444;color:#fff}
+  #btn-reset{background:#222;color:#aaa;border:1px solid #333}
+  #btn-skip{background:#222;color:#aaa;border:1px solid #333}
+  .settings{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:16px;padding:1.25rem;width:100%;max-width:320px;margin-bottom:1rem}
+  .settings summary{cursor:pointer;font-size:.85rem;color:#888;letter-spacing:.1em;text-transform:uppercase;list-style:none}
+  .settings summary::after{content:" ▾"}
+  details[open] summary::after{content:" ▴"}
+  .row{display:flex;align-items:center;justify-content:space-between;margin-top:.9rem;font-size:.85rem;color:#ccc}
+  .row span{min-width:36px;text-align:right;color:#fff;font-weight:600}
+  input[type=range]{width:120px;accent-color:#e63946}
+  .presets{display:flex;gap:8px;margin-top:.9rem;flex-wrap:wrap}
+  .preset{padding:.35rem .8rem;border-radius:999px;background:#222;border:1px solid #333;color:#aaa;font-size:.75rem;cursor:pointer}
+  .preset:hover{border-color:#2ecc71;color:#2ecc71}
+  .preset.active{background:#2ecc71;color:#111;border-color:#2ecc71}
+  .top-presets{display:flex;gap:10px;margin-bottom:1.2rem}
+  #mute-btn{background:none;border:none;cursor:pointer;position:fixed;top:1rem;right:1rem;padding:.4rem;color:#666;line-height:0}
+  #mute-btn:hover{color:#aaa}
+</style>
+</head>
+<body>
+
+<h1>Boxing Timer</h1>
+
+<div class="top-presets">
+  <button class="preset active" id="pre-boxing" onclick="applyPreset(12,180,60,10,10,'pre-boxing')">Boxing</button>
+  <button class="preset" id="pre-calisthenics" onclick="applyPreset(25,40,20,5,5,'pre-calisthenics')">Calisthenics</button>
+</div>
+
+<div class="ring">
+  <svg class="progress" viewBox="0 0 240 240">
+    <circle class="ring-track" cx="120" cy="120" r="108"/>
+    <circle class="ring-fill" id="ring-fill" cx="120" cy="120" r="108" stroke="#e63946"
+      stroke-dasharray="678.6" stroke-dashoffset="0"/>
+  </svg>
+  <div class="ring-center">
+    <div id="time">3:00</div>
+    <div id="phase">Ready</div>
+  </div>
+</div>
+
+<div id="round-info">Round 1 of 8</div>
+
+<div class="controls">
+  <button id="btn-reset" onclick="reset()">Reset</button>
+  <button id="btn-start" onclick="toggle()">Start</button>
+  <button id="btn-skip" onclick="skip()">Skip</button>
+</div>
+
+<details class="settings">
+  <summary>Settings</summary>
+  <div class="row">Rounds
+    <div style="display:flex;align-items:center;gap:8px">
+      <input type="range" id="s-rounds" min="1" max="25" value="8" oninput="updateSettings()">
+      <span id="v-rounds">8</span>
+    </div>
+  </div>
+  <div class="row">Round
+    <div style="display:flex;align-items:center;gap:8px">
+      <input type="range" id="s-rdur" min="10" max="600" step="5" value="180" oninput="updateSettings()">
+      <span id="v-rdur">3:00</span>
+    </div>
+  </div>
+  <div class="row">Rest (sec)
+    <div style="display:flex;align-items:center;gap:8px">
+      <input type="range" id="s-rest" min="15" max="120" step="5" value="60" oninput="updateSettings()">
+      <span id="v-rest">60</span>
+    </div>
+  </div>
+  <div class="row">Prep (sec)
+    <div style="display:flex;align-items:center;gap:8px">
+      <input type="range" id="s-prep" min="0" max="20" step="1" value="10" oninput="updateSettings()">
+      <span id="v-prep">10</span>
+    </div>
+  </div>
+  <div class="row">Warning (sec)
+    <div style="display:flex;align-items:center;gap:8px">
+      <input type="range" id="s-warn" min="0" max="30" step="5" value="10" oninput="updateSettings()">
+      <span id="v-warn">10</span>
+    </div>
+  </div>
+  <div class="presets">
+    <button class="preset active" id="pre-boxing2" onclick="applyPreset(12,180,60,10,10,'pre-boxing')">Boxing</button>
+    <button class="preset" id="pre-calisthenics2" onclick="applyPreset(25,40,20,5,5,'pre-calisthenics')">Calisthenics</button>
+  </div>
+</details>
+
+<button id="mute-btn" onclick="toggleMute()" title="Toggle sound">
+  <svg id="icon-on" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 8a6 6 0 0 1 0 8"/>
+    <path d="M14 10.5a2 2 0 0 1 0 3"/>
+    <path d="M4 14H3a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1h1l4-4v12l-4-4z"/>
+  </svg>
+  <svg id="icon-off" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+    <path d="M4 14H3a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1h1l4-4v12l-4-4z"/>
+    <line x1="23" y1="9" x2="17" y2="15"/>
+    <line x1="17" y1="9" x2="23" y2="15"/>
+  </svg>
+</button>
+
+<script>
+const CIRC = 678.6;
+let cfg = {rounds:8, rdur:3, rest:60, prep:10, warn:10};
+let state = {phase:'prep', round:1, remaining:0, total:0, running:false, warned:false};
+let interval = null;
+let muted = false;
+let audioCtx = null;
+
+function getAudio(){
+  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function tone(freq, startTime, dur, vol, type, detune){
+  type = type||'sine'; detune = detune||0;
+  if(muted) return;
+  try{
+    const ctx = getAudio();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = type;
+    o.frequency.setValueAtTime(freq, startTime);
+    o.detune.value = detune;
+    g.gain.setValueAtTime(0, startTime);
+    g.gain.linearRampToValueAtTime(vol, startTime + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
+    o.start(startTime); o.stop(startTime + dur + 0.05);
+  }catch(e){}
+}
+
+function bell(){
+  if(muted) return;
+  try{
+    const ctx = getAudio();
+    const t = ctx.currentTime;
+    tone(1046, t,      2.4, 0.55, 'sine',   0);
+    tone(1046, t,      2.4, 0.30, 'sine',   7);
+    tone(1046, t,      2.4, 0.30, 'sine',  -7);
+    tone(2093, t+0.01, 1.8, 0.25, 'sine',   0);
+    tone(3135, t+0.01, 1.2, 0.15, 'sine',   0);
+    tone(523,  t,      2.8, 0.20, 'sine',   0);
+    tone(1320, t,      0.08,0.40, 'square', 0);
+  }catch(e){}
+}
+
+function warningBeep(){
+  if(muted) return;
+  try{
+    const ctx = getAudio();
+    const t = ctx.currentTime;
+    for(var i=0;i<3;i++){
+      tone(880, t + i*0.18, 0.10, 0.35, 'square', 0);
+      tone(440, t + i*0.18, 0.10, 0.15, 'sine',   0);
+    }
+  }catch(e){}
+}
+
+function endBeep(){
+  if(muted) return;
+  try{
+    const ctx = getAudio();
+    const t = ctx.currentTime;
+    tone(180, t,      0.25, 0.50, 'sine', 0);
+    tone(90,  t,      0.30, 0.30, 'sine', 0);
+    tone(180, t+0.35, 0.25, 0.50, 'sine', 0);
+    tone(90,  t+0.35, 0.30, 0.30, 'sine', 0);
+  }catch(e){}
+}
+
+function fmtTime(s){
+  var m = Math.floor(s/60);
+  var sec = s%60;
+  return m+':'+(sec<10?'0':'')+sec;
+}
+
+function phaseDuration(){
+  if(state.phase==='prep') return cfg.prep||1;
+  if(state.phase==='fight') return Math.round(cfg.rdur*60);
+  if(state.phase==='rest') return cfg.rest;
+  return 0;
+}
+
+function updateRing(remaining, total, phase){
+  var fill = document.getElementById('ring-fill');
+  var ratio = total > 0 ? remaining/total : 1;
+  fill.style.strokeDashoffset = CIRC*(1-ratio);
+  if(phase==='prep') fill.style.stroke='#f4a261';
+  else if(phase==='fight') fill.style.stroke = (remaining <= cfg.warn && remaining > 0) ? '#ffb703' : '#2ecc71';
+  else fill.style.stroke='#3a86ff';
+}
+
+function updateUI(){
+  document.getElementById('time').textContent = fmtTime(state.remaining);
+  var phaseEl = document.getElementById('phase');
+  if(state.phase==='prep') phaseEl.textContent='Get Ready';
+  else if(state.phase==='fight') phaseEl.textContent='Fight!';
+  else phaseEl.textContent='Rest';
+  document.getElementById('round-info').textContent = 'Round '+state.round+' of '+cfg.rounds;
+  updateRing(state.remaining, phaseDuration(), state.phase);
+}
+
+function startPhase(phase, round){
+  state.phase = phase;
+  state.round = round;
+  state.warned = false;
+  var dur = phaseDuration();
+  state.remaining = dur;
+  state.total = dur;
+  if(phase==='fight') bell();
+  if(phase==='rest') endBeep();
+  updateUI();
+}
+
+function tick(){
+  state.remaining--;
+  if(state.phase==='fight' && state.remaining===cfg.warn && !state.warned && cfg.warn>0){
+    state.warned=true;
+    warningBeep();
+  }
+  if(state.remaining<=0){
+    if(state.phase==='prep'){
+      startPhase('fight',state.round);
+    } else if(state.phase==='fight'){
+      if(state.round>=cfg.rounds){
+        endBeep();
+        clearInterval(interval); interval=null; state.running=false;
+        state.phase='done';
+        document.getElementById('time').textContent='Done!';
+        document.getElementById('phase').textContent='Workout complete';
+        document.getElementById('round-info').textContent=cfg.rounds+' rounds finished';
+        document.getElementById('btn-start').textContent='Start';
+        document.getElementById('btn-start').classList.remove('running');
+        updateRing(0,1,'fight');
+        return;
+      }
+      startPhase('rest',state.round);
+    } else if(state.phase==='rest'){
+      startPhase('fight',state.round+1);
+    }
+    return;
+  }
+  updateUI();
+}
+
+function toggle(){
+  if(state.running){
+    clearInterval(interval); interval=null; state.running=false;
+    document.getElementById('btn-start').textContent='Resume';
+    document.getElementById('btn-start').classList.remove('running');
+  } else {
+    if(state.phase==='done') return;
+    state.running=true;
+    document.getElementById('btn-start').textContent='Pause';
+    document.getElementById('btn-start').classList.add('running');
+    interval=setInterval(tick,1000);
+  }
+}
+
+function reset(){
+  clearInterval(interval); interval=null; state.running=false;
+  document.getElementById('btn-start').textContent='Start';
+  document.getElementById('btn-start').classList.remove('running');
+  var prep = cfg.prep>0;
+  state.phase = prep?'prep':'fight';
+  state.round = 1;
+  state.warned = false;
+  state.remaining = prep ? cfg.prep : Math.round(cfg.rdur*60);
+  state.total = state.remaining;
+  updateUI();
+}
+
+function skip(){
+  if(!state.running && state.phase!=='done') return;
+  clearInterval(interval);
+  state.remaining=1;
+  tick();
+  if(state.running && state.phase!=='done'){
+    interval=setInterval(tick,1000);
+  }
+}
+
+function updateSettings(){
+  cfg.rounds = +document.getElementById('s-rounds').value;
+  cfg.rdur   = +document.getElementById('s-rdur').value/60;
+  cfg.rest   = +document.getElementById('s-rest').value;
+  cfg.prep   = +document.getElementById('s-prep').value;
+  cfg.warn   = +document.getElementById('s-warn').value;
+  document.getElementById('v-rounds').textContent = cfg.rounds;
+  document.getElementById('v-rdur').textContent   = fmtTime(+document.getElementById('s-rdur').value);
+  document.getElementById('v-rest').textContent   = cfg.rest;
+  document.getElementById('v-prep').textContent   = cfg.prep;
+  document.getElementById('v-warn').textContent   = cfg.warn;
+  if(!state.running) reset();
+}
+
+function applyPreset(rounds,rdurSec,rest,prep,warn,activeId){
+  document.getElementById('s-rounds').value = rounds;
+  document.getElementById('s-rdur').value   = rdurSec;
+  document.getElementById('s-rest').value   = rest;
+  document.getElementById('s-prep').value   = prep;
+  document.getElementById('s-warn').value   = warn;
+  updateSettings();
+  ['pre-boxing','pre-calisthenics','pre-boxing2','pre-calisthenics2'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.classList.toggle('active', id===activeId || id===activeId+'2');
+  });
+}
+
+function toggleMute(){
+  muted=!muted;
+  document.getElementById('icon-on').style.display  = muted?'none':'';
+  document.getElementById('icon-off').style.display = muted?'':'none';
+}
+
+if('wakeLock' in navigator){
+  document.getElementById('btn-start').addEventListener('click',async function(){
+    if(state.running){
+      try{ await navigator.wakeLock.request('screen'); }catch(e){}
+    }
+  });
+}
+
+reset();
+</script>
+</body>
+</html>
