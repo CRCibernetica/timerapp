@@ -110,7 +110,7 @@
   </div>
   <div class="row">Round
     <div style="display:flex;align-items:center;gap:8px">
-      <input type="range" id="s-rdur" min="10" max="600" step="5" value="180" oninput="updateSettings()">
+      <input type="range" id="s-rdur" min="30" max="240" step="5" value="180" oninput="updateSettings()">
       <span id="v-rdur">3:00</span>
     </div>
   </div>
@@ -312,8 +312,14 @@ function updateSettings(){
 }
 
 function applyPreset(rounds,rdurSec,rest,prep,warn,activeId){
+  var rdurSlider = document.getElementById('s-rdur');
+  if(activeId === 'pre-calisthenics'){
+    rdurSlider.min = 30; rdurSlider.max = 60; rdurSlider.step = 5;
+  } else {
+    rdurSlider.min = 30; rdurSlider.max = 240; rdurSlider.step = 5;
+  }
   document.getElementById('s-rounds').value = rounds;
-  document.getElementById('s-rdur').value   = rdurSec;
+  rdurSlider.value = rdurSec;
   document.getElementById('s-rest').value   = rest;
   document.getElementById('s-prep').value   = prep;
   document.getElementById('s-warn').value   = warn;
