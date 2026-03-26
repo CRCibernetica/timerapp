@@ -160,15 +160,23 @@ let interval = null;
 let muted = false;
 const bellAudio = new Audio('bell.mp3');
 const warningAudio = new Audio('warning.mp3');
+var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+var warningSource = audioCtx.createMediaElementSource(warningAudio);
+var warningGain = audioCtx.createGain();
+warningGain.gain.value = 3.0;
+warningSource.connect(warningGain);
+warningGain.connect(audioCtx.destination);
 
 function bell(){
   if(muted) return;
+  if(audioCtx.state === 'suspended') audioCtx.resume();
   bellAudio.currentTime = 0;
   bellAudio.play().catch(function(){});
 }
 
 function warningBeep(){
   if(muted) return;
+  if(audioCtx.state === 'suspended') audioCtx.resume();
   warningAudio.currentTime = 0;
   warningAudio.play().catch(function(){});
 }
