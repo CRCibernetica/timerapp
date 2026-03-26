@@ -1,4 +1,4 @@
-const CACHE_NAME = 'boxing-timer-v4';
+const CACHE_NAME = 'boxing-timer-v5';
 const ASSETS = [
   '/',
   '/index.html',
